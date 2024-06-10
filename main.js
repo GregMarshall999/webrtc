@@ -36,6 +36,26 @@ let init = async () => {
 }
 
 let createOffer = async memberId => {
+    await createPeerConnection(memberId);
+
+    let offer = await peerConnection.createOffer();
+    await peerConnection.setLocalDescription(offer);
+
+    client.sendMessageToPeer({ text: JSON.stringify({ 'type':'offer', 'offer':offer }) }, memberId);
+}
+
+let createAnswer = async (memberId, offer) => {
+    await createPeerConnection(memberId);
+
+    await peerConnection.setRemoteDescription(offer);
+
+    let answer = await peerConnection.createAnswer();
+    await peerConnection.setLocalDescription(answer);
+
+    client.sendMessageToPeer({ text: JSON.stringify({ 'type':'answer', 'answer':answer }) }, memberId);
+}
+
+let createPeerConnection = async memberId => {
     peerConnection = new RTCPeerConnection(servers);
 
     remoteStream = new MediaStream();
@@ -61,13 +81,13 @@ let createOffer = async memberId => {
             client.sendMessageToPeer({ text: JSON.stringify({ 'type':'candidate', 'candidate':event.candidate }) }, memberId);
         }
     };
-
-    let offer = await peerConnection.createOffer();
-    await peerConnection.setLocalDescription(offer);
-
-    //console.log('Offer:', offer);
-    client.sendMessageToPeer({ text: JSON.stringify({ 'type':'offer', 'offer':offer }) }, memberId);
 }
+
+let addAnswer = async answer => {
+    if(!peerConnection.currentRemoteDescription) {
+        peerConnection.setRemoteDescription(answer);
+    }
+} 
 
 let handleUserJoined = async memberId => {
     console.log('A new user joined the channel:', memberId);
@@ -76,7 +96,20 @@ let handleUserJoined = async memberId => {
 
 let handleMessageFromPeer = async (message, memberId) => {
     msg = JSON.parse(message.text);
-    console.log('Message:', msg);
+
+    if(msg.type === 'offer') {
+        createAnswer(memberId, msg.offer);
+    }
+    
+    if(msg.type === 'answer') {
+        addAnswer(msg.answer);
+    }
+    
+    if(msg.type === 'candidate') {
+        if(peerConnection) {
+            peerConnection.addIceCandidate(msg.candidate);
+        }
+    }
 }
 
 init();
