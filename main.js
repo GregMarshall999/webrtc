@@ -71,6 +71,8 @@ let createPeerConnection = async memberId => {
     document.getElementById('user-2').srcObject = remoteStream;
     document.getElementById('user-2').style.display = 'block';
 
+    document.getElementById('user-1').classList.add('smallFrame');
+
     if(!localStream) {
         localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
         document.getElementById('user-1').srcObject = localStream;
@@ -106,6 +108,7 @@ let handleUserJoined = async memberId => {
 
 let handleUserLeft = memberId => {
     document.getElementById('user-2').style.display = 'none';
+    document.getElementById('user-1').classList.remove('smallFrame');
 }
 
 let handleMessageFromPeer = async (message, memberId) => {
