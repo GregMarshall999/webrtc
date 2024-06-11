@@ -27,7 +27,8 @@ let init = async () => {
     channel = client.createChannel('main');
     await channel.join()
 
-    channel.on('MemberJoined', handleUserJoined)
+    channel.on('MemberJoined', handleUserJoined);
+    channel.on('MemberLeft', handleUserLeft);
 
     client.on('MessageFromPeer', handleMessageFromPeer);
 
@@ -60,6 +61,7 @@ let createPeerConnection = async memberId => {
 
     remoteStream = new MediaStream();
     document.getElementById('user-2').srcObject = remoteStream;
+    document.getElementById('user-2').style.display = 'block';
 
     if(!localStream) {
         localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
@@ -94,6 +96,10 @@ let handleUserJoined = async memberId => {
     createOffer(memberId);
 }
 
+let handleUserLeft = memberId => {
+    document.getElementById('user-2').style.display = 'none';
+}
+
 let handleMessageFromPeer = async (message, memberId) => {
     msg = JSON.parse(message.text);
 
@@ -111,5 +117,13 @@ let handleMessageFromPeer = async (message, memberId) => {
         }
     }
 }
+
+let leaveChannel = async () => {
+    await channel.leave();
+    await client.logout();
+}
+
+//required to prevent auto leave from the member left event
+window.addEventListener('beforeunload', leaveChannel);
 
 init();
