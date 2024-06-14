@@ -177,6 +177,17 @@
     display: none;
 }
 
+#stream_box .video_container {
+    border: 2px solid #000;
+    border-radius: 0;
+    height: 100% !important;
+    width: 100% !important;
+}
+
+#stream_box video {
+    border-radius: 0;
+}
+
 #streams_container {
     display: flex;
     flex-wrap: wrap;
