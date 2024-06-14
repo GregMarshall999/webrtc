@@ -1,4 +1,4 @@
-const APP_ID = "ec50216c11144505a73823ced15d3f80";
+const APP_ID = "63d7c9991e164fea81b38210ac0792c9";
 
 let uid = sessionStorage.getItem('uid');
 if(!uid) {
@@ -24,6 +24,8 @@ let joinRoomInit = async () => {
     client = AgoraRTC.createClient({ mode: 'rtc', codec: 'vp8' });
     await client.join(APP_ID, roomId, token, uid);
 
+    client.on('user-published', handleUserPublished);
+
     joinStream();
 }
 
@@ -37,6 +39,31 @@ let joinStream = async () => {
     document.getElementById('streams_container').insertAdjacentHTML('beforeend', player);
 
     localTracks[1].play(`user-${uid}`);
+    await client.publish([localTracks[0], localTracks[1]]);
+}
+
+let handleUserPublished = async (user, mediaType) => {
+    remoteUsers[user.uid] = user;
+
+    await client.subscribe(user, mediaType);
+
+    let player = document.getElementById(`user-container-${user.uid}`);
+
+    if(player === null) {
+        player = `  <div class="video_container" id="user-container-${user.uid}">
+                        <div class="video-player" id="user-${user.uid}"></div>
+                    </div>`;
+
+        document.getElementById('streams_container').insertAdjacentHTML('beforeend', player);
+    }
+
+    if(mediaType === 'video') {
+        user.videoTrack.play(`user-${user.uid}`);
+    }
+
+    if(mediaType === 'audio') {
+        user.audioTrack.play(); //may need the video div id
+    }
 }
 
 joinRoomInit();
