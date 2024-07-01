@@ -41,11 +41,13 @@ let joinRoomInit = async () => {
     channel.on('MemberJoined', handleMemberJoined);
     channel.on('MemberLeft', handleMemberLeft);
 
+    getMembers()
+
     client = AgoraRTC.createClient({ mode: 'rtc', codec: 'vp8' });
     await client.join(APP_ID, roomId, token, uid);
 
     client.on('user-published', handleUserPublished);
-    client.on('user-left', handleUserLeft);
+    client.on('user-left', handleUserLeft); //TODO add immediate removal
 
     joinStream();
 }
