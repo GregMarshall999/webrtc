@@ -30,3 +30,15 @@ function onCatch(error) {
     const errorElement = document.querySelector('#errorMsg');
     errorElement.innerHTML += `<p>Something went wrong: ${error.name}</p>`;
 }
+
+//Adding Stun server for ICE transaction
+const rtcConfig = {
+    iceServers: [
+        { curls: 'stun:stun.1.google.com:19302' },
+    ]
+};
+  
+let peerConnection = new RTCPeerConnection(rtcConfig);
+  
+//Creating peer connection
+peerConnection.createOffer({ iceRestart: true }).then((offer) => pc1.setLocalDescription(offer))
