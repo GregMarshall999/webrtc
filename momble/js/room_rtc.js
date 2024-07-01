@@ -52,6 +52,23 @@ let joinStream = async () => {
     await client.publish([localTracks[0], localTracks[1]]);
 }
 
+let switchToCamera = async () => {
+    let player = `  <div class="video_container" id="user-container-${uid}">
+                        <div class="video-player" id="user-${uid}"></div>
+                    </div>`;
+
+    displayFrame.getElementById('streams_container').insertAdjacentHTML('beforeend', player);
+
+    await localTracks[0].setMuted(true);
+    await localTracks[1].setMuted(true);
+
+    document.getElementById('mic-btn').classList.remove('active');
+    document.getElementById('screen-btn').classList.remove('active');
+
+    localTracks[1].play(`user-${uid}`);
+    await client.publish([localTracks[1]]);
+}
+
 let handleUserPublished = async (user, mediaType) => {
     remoteUsers[user.uid] = user;
 
@@ -163,6 +180,9 @@ let toggleScreen = async e => {
         sharingScreen = false;
         cameraButton.style.display = 'block';
         document.getElementById(`user-container-${uid}`).remove();
+        await client.unpublish([localScreenTracks]);
+
+        switchToCamera()
     }
 }
 
