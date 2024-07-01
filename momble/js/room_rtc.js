@@ -20,7 +20,7 @@ if(!roomId) {
     roomId = 'main';
 }
 
-let displayName = localStorage.getItem('display_name');
+let displayName = sessionStorage.getItem('display_name');
 if(!displayName) {
     window.localtion = 'lobby.html';
 }
@@ -35,30 +35,34 @@ let joinRoomInit = async () => {
     rtmClient = await AgoraRTM.createInstance(APP_ID);
     await rtmClient.login({ uid, token });
 
+    await rtmClient.addOrUpdateLocalUserAttributes({ 'name': displayName });
+
     channel = await rtmClient.createChannel(roomId);
     await channel.join();
 
     channel.on('MemberJoined', handleMemberJoined);
     channel.on('MemberLeft', handleMemberLeft);
+    channel.on('ChannelMessage', handleChannelMessage)
 
     getMembers()
+    addBotMessageToDom(`Welcome to the room ${displayName}! 👋`)
 
     client = AgoraRTC.createClient({ mode: 'rtc', codec: 'vp8' });
     await client.join(APP_ID, roomId, token, uid);
 
     client.on('user-published', handleUserPublished);
-    client.on('user-left', handleUserLeft); //TODO add immediate removal
-
-    joinStream();
+    client.on('user-left', handleUserLeft);
 }
 
 let joinStream = async () => {
-    localTracks = await AgoraRTC.createMicrophoneAndCameraTracks(
-        {}, 
-        { encoderConfig: {
-                width: { min: 640, ideal: 1920, max: 1920 }, 
-                height: { min: 480, ideal: 1080, max: 1080 }
-        }});
+    document.getElementById('join-btn').style.display = 'none'
+    document.getElementsByClassName('stream_actions')[0].style.display = 'flex'
+
+    localTracks = await AgoraRTC.createMicrophoneAndCameraTracks({}, { encoderConfig: {
+        width: { min: 640, ideal: 1920, max: 1920 }, 
+        height: { min: 480, ideal: 1080, max: 1080 }
+    }});
+
 
     let player = `  <div class="video_container" id="user-container-${uid}">
                         <div class="video-player" id="user-${uid}"></div>
@@ -75,8 +79,7 @@ let switchToCamera = async () => {
     let player = `  <div class="video_container" id="user-container-${uid}">
                         <div class="video-player" id="user-${uid}"></div>
                     </div>`;
-
-    displayFrame.getElementById('streams_container').insertAdjacentHTML('beforeend', player);
+    displayFrame.insertAdjacentHTML('beforeend', player);
 
     await localTracks[0].setMuted(true);
     await localTracks[1].setMuted(true);
@@ -94,7 +97,6 @@ let handleUserPublished = async (user, mediaType) => {
     await client.subscribe(user, mediaType);
 
     let player = document.getElementById(`user-container-${user.uid}`);
-
     if(player === null) {
         player = `  <div class="video_container" id="user-container-${user.uid}">
                         <div class="video-player" id="user-${user.uid}"></div>
@@ -102,6 +104,7 @@ let handleUserPublished = async (user, mediaType) => {
 
         document.getElementById('streams_container').insertAdjacentHTML('beforeend', player);
         document.getElementById(`user-container-${user.uid}`).addEventListener('click', expandVideoFrame);
+
     }
 
     if(displayFrame.style.display) {
@@ -115,16 +118,21 @@ let handleUserPublished = async (user, mediaType) => {
     }
 
     if(mediaType === 'audio') {
-        user.audioTrack.play(); //may need the video div id
+        user.audioTrack.play();
     }
+
 }
 
 let handleUserLeft = async user => {
     delete remoteUsers[user.uid];
-    document.getElementById(`user-container-${user.uid}`).remove();
+    let item = document.getElementById(`user-container-${user.uid}`);
+    if(item) {
+        item.remove();
+    }
 
     if(userIdInDisplayFrame === `user-container-${user.uid}`) {
         displayFrame.style.display = null;
+
         let videoFrames = document.getElementsByClassName('video_container');
 
         for(let i = 0; i < videoFrames.length; i++) {
@@ -135,15 +143,14 @@ let handleUserLeft = async user => {
 }
 
 let toggleMic = async e => {
-    let mic = e.currentTarget;
+    let button = e.currentTarget;
 
     if(localTracks[0].muted) {
         await localTracks[0].setMuted(false);
-        mic.classList.add('active');
-    } 
-    else {
+        button.classList.add('active');
+    } else {
         await localTracks[0].setMuted(true);
-        mic.classList.remove('active');
+        button.classList.remove('active');
     }
 }
 
@@ -153,8 +160,7 @@ let toggleCamera = async e => {
     if(localTracks[1].muted) {
         await localTracks[1].setMuted(false);
         button.classList.add('active');
-    } 
-    else {
+    } else {
         await localTracks[1].setMuted(true);
         button.classList.remove('active');
     }
@@ -166,11 +172,13 @@ let toggleScreen = async e => {
 
     if(!sharingScreen) {
         sharingScreen = true;
+
         screenButton.classList.add('active');
         cameraButton.classList.remove('active');
         cameraButton.style.display = 'none';
 
         localScreenTracks = await AgoraRTC.createScreenVideoTrack();
+
         document.getElementById(`user-container-${uid}`).remove();
         displayFrame.style.display = 'block';
 
@@ -194,19 +202,56 @@ let toggleScreen = async e => {
               videoFrames[i].style.width = '100px';
             }
         }
-    }
-    else {
+
+
+    } else {
         sharingScreen = false;
         cameraButton.style.display = 'block';
         document.getElementById(`user-container-${uid}`).remove();
         await client.unpublish([localScreenTracks]);
 
-        switchToCamera()
+        switchToCamera();
     }
 }
 
-document.getElementById('mic-btn').addEventListener('click', toggleMic);
+let leaveStream = async e => {
+    e.preventDefault();
+
+    document.getElementById('join-btn').style.display = 'block';
+    document.getElementsByClassName('stream_actions')[0].style.display = 'none';
+
+    for(let i = 0; i < localTracks.length; i++) {
+        localTracks[i].stop();
+        localTracks[i].close();
+    }
+
+    await client.unpublish([localTracks[0], localTracks[1]]);
+
+    if(localScreenTracks) {
+        await client.unpublish([localScreenTracks]);
+    }
+
+    document.getElementById(`user-container-${uid}`).remove();
+
+    if(userIdInDisplayFrame === `user-container-${uid}`) {
+        displayFrame.style.display = null;
+
+        for(let i = 0; i < videoFrame.length; i++) {
+            videoFrame[i].style.height = '300px';
+            videoFrame[i].style.width = '300px';
+        }
+    }
+
+    channel.sendMessage({ text: JSON.stringify({ 'type': 'user_left', 'uid': uid }) });
+}
+
+
+
 document.getElementById('camera-btn').addEventListener('click', toggleCamera);
+document.getElementById('mic-btn').addEventListener('click', toggleMic);
 document.getElementById('screen-btn').addEventListener('click', toggleScreen);
+document.getElementById('join-btn').addEventListener('click', joinStream);
+document.getElementById('leave-btn').addEventListener('click', leaveStream);
+
 
 joinRoomInit();

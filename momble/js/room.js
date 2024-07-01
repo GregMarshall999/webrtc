@@ -8,13 +8,35 @@ const chatContainer = document.getElementById('messages_container');
 const chatButton = document.getElementById('chat_button');
 
 let activeMemberContainer = false;
+
+memberButton.addEventListener('click', () => {
+  if (activeMemberContainer) {
+    memberContainer.style.display = 'none';
+  } else {
+    memberContainer.style.display = 'block';
+  }
+
+  activeMemberContainer = !activeMemberContainer;
+});
+
 let activeChatContainer = false;
+
+chatButton.addEventListener('click', () => {
+  if (activeChatContainer) {
+    chatContainer.style.display = 'none';
+  } else {
+    chatContainer.style.display = 'block';
+  }
+
+  activeChatContainer = !activeChatContainer;
+});
 
 let displayFrame = document.getElementById('stream_box');
 let videoFrames = document.getElementsByClassName('video_container');
 let userIdInDisplayFrame = null;
 
 let expandVideoFrame = e => {
+
   let child = displayFrame.children[0];
   if(child) {
     document.getElementById('streams_container').appendChild(child);
@@ -30,7 +52,13 @@ let expandVideoFrame = e => {
       videoFrames[i].style.width = '100px';
     }
   }
+
 }
+
+for(let i = 0; i < videoFrames.length; i++) {
+  videoFrames[i].addEventListener('click', expandVideoFrame);
+}
+
 
 let hideDisplayFrame = () => {
   userIdInDisplayFrame = null;
@@ -45,31 +73,4 @@ let hideDisplayFrame = () => {
   }
 }
 
-memberButton.addEventListener('click', () => {
-  if (activeMemberContainer) {
-    memberContainer.style.display = 'none';
-  } 
-  else {
-    memberContainer.style.display = 'block';
-  }
-
-  activeMemberContainer = !activeMemberContainer;
-});
-
-
-chatButton.addEventListener('click', () => {
-  if (activeChatContainer) {
-    chatContainer.style.display = 'none';
-  } 
-  else {
-    chatContainer.style.display = 'block';
-  }
-
-  activeChatContainer = !activeChatContainer;
-});
-
 displayFrame.addEventListener('click', hideDisplayFrame);
-
-for(let i = 0; i < videoFrames.length; i++) {
-  videoFrames[i].addEventListener('click', expandVideoFrame);
-}
