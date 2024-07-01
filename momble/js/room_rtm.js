@@ -22,7 +22,7 @@ let addMemberToDom = async memberId => {
 }
 
 let updateMemberTotal = async members => {
-    let total = document.getElementById('member_count');
+    let total = document.getElementById('members_count');
     total.innerText = members.length;
 }
 
@@ -44,7 +44,8 @@ let removeMemberFromDom = async memberId => {
 let getMembers = async () => {
     let members = await channel.getMembers();
     updateMemberTotal(members);
-    for(let i = 0; i < members.length(); i++) {
+
+    for(let i = 0; i < members.length; i++) {
         addMemberToDom(members[i]);
     }
 }
