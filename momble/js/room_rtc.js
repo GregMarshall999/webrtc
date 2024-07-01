@@ -17,6 +17,11 @@ if(!roomId) {
     roomId = 'main';
 }
 
+let displayName = localStorage.getItem('display_name');
+if(!displayName) {
+    window.localtion = 'lobby.html';
+}
+
 let localTracks = [];
 let remoteUsers = {};
 
