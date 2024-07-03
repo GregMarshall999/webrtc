@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Channel</title>
+    <link href="./css/main.css" rel="stylesheet"></link>
+</head>
+<body>
+    <div id="container">
+        <h1><a homepage="" href="https://github.com/GetStream/webrtc-for-the-brave" samples="" title="WebRTC">WebRTC samples</a> <span>Transmit text</span></h1>
+    
+        <div id="buttons">
+            <button id="startButton">Start</button>
+            <button disabled="disabled" id="sendButton">Send</button>
+            <button disabled="disabled" id="closeButton">Stop</button>
+        </div>
+    
+        <div id="sendReceive">
+            <div id="send">
+                <h2>Send</h2>
+                <textarea disabled="disabled" enter="" id="dataChannelSend" placeholder="Press" press="" send.="" some="" start="" text="" then=""></textarea>
+            </div>
+    
+            <div id="receive">
+                <h2>Receive</h2>
+                <textarea disabled="disabled" id="dataChannelReceive"></textarea>
+            </div>
+        </div>
+
+        <div id="errorMsg"></div>
+    </div>
+
+    <a href="home.html">Home</a>
+
+    <script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
+    <script async="" src="js/dataChannel.js"></script>
+</body>
+</html>
